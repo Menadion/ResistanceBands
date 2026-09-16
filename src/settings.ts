@@ -1,18 +1,18 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from './main';
+import ResBandPlugin from './main';
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface ResBandSettings {
+	ResBandSetting: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+export const DEFAULT_SETTINGS: ResBandSettings = {
+	ResBandSetting: 'default',
 };
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class ResBandSettingTab extends PluginSettingTab {
+	plugin: ResBandPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ResBandPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -28,9 +28,9 @@ export class SampleSettingTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
+					.setValue(this.plugin.settings.ResBandSetting)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.ResBandSetting = value;
 						await this.plugin.saveSettings();
 					}),
 			);
