@@ -2,7 +2,7 @@
 	"id": "resistance-bands",
 	"name": "Resistance Bands",
 	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
+	"minAppVersion": "1.7.2",
 	"description": "Demonstrates some of the capabilities of the Obsidian API.",
 	"author": "Menadion",
 	"authorUrl": "https://obsidian.md",

@@ -1,5 +1,4 @@
 import {
-	Notice,
 	Plugin,
 } from 'obsidian';
 import {
@@ -8,24 +7,29 @@ import {
 	ResBandSettingTab,
 } from './settings';
 
+import {
+	ResBandView,
+	VIEW_TYPE_RESBAND,
+} from './view'
+
 export default class ResBandPlugin extends Plugin {
 	settings!: ResBandSettings;
 
 	async onload() {
 		await this.loadSettings();
 
+		this.registerView(VIEW_TYPE_RESBAND, (leaf) => new ResBandView(leaf))
+
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		this.addRibbonIcon('waypoints', 'Start resistance band', (_evt: MouseEvent) => {
+			void this.activateView();
 		});
 
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
+			id: 'open-rb-graph',
+			name: 'Open rb graph',
 			callback: () => {
-				new Notice('A notice for the addCommand!');
+				void this.activateView();
 			},
 		});
 
@@ -45,5 +49,17 @@ export default class ResBandPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async activateView() {
+		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_RESBAND)
+		let leaf = leaves[0]
+
+		if (!leaf) {
+			leaf = this.app.workspace.getLeaf(true)
+			await leaf.setViewState({ type: VIEW_TYPE_RESBAND, active: true })
+		}
+		
+		await this.app.workspace.revealLeaf(leaf)
 	}
 }
