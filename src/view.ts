@@ -13,5 +13,19 @@ export class ResBandView extends ItemView {
     async onOpen() {
         this.contentEl.empty()
         this.contentEl.createEl("h4", {text: "placeholder"})
+
+        const LINKS = this.app.metadataCache.resolvedLinks
+        const memoryNotes: string[] = []
+        const bandsList: { source: string, target: string }[] = []
+
+        for (const path in LINKS) {
+            if (path.startsWith("7 - Agent Memory/")) {
+                memoryNotes.push(path)
+            }
+
+            for (const band in LINKS[path]) {
+                bandsList.push({ source: path, target: band })
+            }
+        }
     }
 };
