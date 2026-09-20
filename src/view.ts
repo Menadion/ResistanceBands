@@ -15,6 +15,10 @@ export class ResBandView extends ItemView {
         this.contentEl.createEl("h4", {text: "placeholder"})
 
         const LINKS = this.app.metadataCache.resolvedLinks
+        const APP = this.app.vault.configDir + "/app.json"
+        const SETTINGS = await this.app.vault.adapter.read(APP)
+        const FILTERS = (JSON.parse(SETTINGS) as { userIgnoreFilters?: string[] })["userIgnoreFilters"] ?? []
+
         const memoryNotes: string[] = []
         const bandsList: { source: string, target: string }[] = []
 
@@ -28,4 +32,4 @@ export class ResBandView extends ItemView {
             }
         }
     }
-};
+}
