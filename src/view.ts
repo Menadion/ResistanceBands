@@ -23,11 +23,19 @@ export class ResBandView extends ItemView {
         const bandsList: { source: string, target: string }[] = []
 
         for (const path in LINKS) {
+            if (FILTERS.some(filter => path.startsWith(filter))) {
+                continue
+            }
+
             if (path.startsWith("7 - Agent Memory/")) {
                 memoryNotes.push(path)
             }
 
             for (const band in LINKS[path]) {
+                if (FILTERS.some(filter => band.startsWith(filter))) {
+                    continue
+                }
+                
                 bandsList.push({ source: path, target: band })
             }
         }
