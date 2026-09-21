@@ -18,8 +18,12 @@ export class ResBandView extends ItemView {
         const APP = this.app.vault.configDir + "/app.json"
         const SETTINGS = await this.app.vault.adapter.read(APP)
         const FILTERS = (JSON.parse(SETTINGS) as { userIgnoreFilters?: string[] })["userIgnoreFilters"] ?? []
+        
+        const BAND_RULES: { folder: string, length: number, rank: number}[] = [
+            { folder: "7 - Agent Memory/",  length: 300, rank: 1 },
+            { folder: "3 - Tags/",  length: 50, rank: 2 }
+        ]
 
-        const memoryNotes: string[] = []
         const bandsList: { source: string, target: string }[] = []
 
         for (const path in LINKS) {
@@ -27,15 +31,15 @@ export class ResBandView extends ItemView {
                 continue
             }
 
-            if (path.startsWith("7 - Agent Memory/")) {
-                memoryNotes.push(path)
-            }
+            const sourceRule = BAND_RULES.find(rule => path.startsWith(rule.folder))
 
             for (const band in LINKS[path]) {
                 if (FILTERS.some(filter => band.startsWith(filter))) {
                     continue
                 }
                 
+                const targetRule = BAND_RULES.find(rule => band.startsWith(rule.folder))
+
                 bandsList.push({ source: path, target: band })
             }
         }
