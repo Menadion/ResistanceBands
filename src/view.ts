@@ -2,6 +2,23 @@ import {
     ItemView 
 } from 'obsidian';
 
+import {
+    SimulationNodeDatum,
+    SimulationLinkDatum,
+    forceSimulation,
+    forceLink
+} from 'd3-force'
+
+interface RbNode extends SimulationNodeDatum {
+    path: string
+}
+
+interface RbBand extends SimulationLinkDatum<RbNode> {
+    source: string,
+    target: string,
+    length: number
+}
+
 export const VIEW_TYPE_RESBAND = "resistance-bands-view";
 
 export class ResBandView extends ItemView {
@@ -13,7 +30,7 @@ export class ResBandView extends ItemView {
     async onOpen() {
         this.contentEl.empty()
         this.contentEl.createEl("h4", {text: "placeholder"})
-
+        
         const LINKS = this.app.metadataCache.resolvedLinks
         const APP = this.app.vault.configDir + "/app.json"
         const APP_SETTINGS = await this.app.vault.adapter.read(APP)
@@ -21,26 +38,40 @@ export class ResBandView extends ItemView {
 
         const GRAPH = this.app.vault.configDir + "/graph.json"
         const GRAPH_SETTINGS = await this.app.vault.adapter.read(GRAPH)
-        const DISTANCE = (JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number })["linkDistance"] ?? 30
+
+        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, showAttachments?: boolean }
+        const DISTANCE = PREFERENCES["linkDistance"] ?? 30
+        const ATTACHMENTS_VISIBLE = PREFERENCES["showAttachments"] ?? true
         
         const BAND_RULES: { folder: string, multiplier: number, rank: number}[] = [
             { folder: "7 - Agent Memory/",  multiplier: 3, rank: 1 },
             { folder: "3 - Tags/",  multiplier: 0.5, rank: 2 }
         ]
 
-        const bandsList: { source: string, target: string, length: number }[] = []
+        const bandsList: RbBand[] = []
+        const nodesList: RbNode[] = []
 
         for (const path in LINKS) {
-            if (FILTERS.some(filter => path.startsWith(filter))) {
-                continue
-            }
+            if (FILTERS.some(filter => path.startsWith(filter))) { continue }
+            nodesList.push({ path: path})
+        }
+
+        for (const path in LINKS) {
+            if (FILTERS.some(filter => path.startsWith(filter))) { continue }
 
             const sourceRule = BAND_RULES.find(rule => path.startsWith(rule.folder))
 
             for (const band in LINKS[path]) {
-                if (FILTERS.some(filter => band.startsWith(filter))) {
-                    continue
-                }
+                if (FILTERS.some(filter => band.startsWith(filter))) { continue }
+                if (!LINKS[band]) { 
+                    if (ATTACHMENTS_VISIBLE) {
+                        if (!nodesList.some(node => node.path === band)) {
+                            nodesList.push({ path: band })
+                        }
+                    } else {
+                        continue
+                    }
+                 }
                 
                 const targetRule = BAND_RULES.find(rule => band.startsWith(rule.folder))
 
@@ -63,5 +94,15 @@ export class ResBandView extends ItemView {
                 bandsList.push({ source: path, target: band, length: (DISTANCE * bandMultiplier) })
             }
         }
+
+        console.debug("nodes:", nodesList.length)
+        console.debug("bands:", bandsList.length)
+
+        const SIMULATION = forceSimulation(nodesList)
+        SIMULATION.force("link", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length))
+
+        SIMULATION.stop()
+        SIMULATION.tick(300)
+        console.debug(nodesList)
     }
 }
