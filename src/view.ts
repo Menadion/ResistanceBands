@@ -6,7 +6,10 @@ import {
     SimulationNodeDatum,
     SimulationLinkDatum,
     forceSimulation,
-    forceLink
+    forceLink,
+    forceManyBody,
+    forceX,
+    forceY
 } from 'd3-force'
 
 interface RbNode extends SimulationNodeDatum {
@@ -39,8 +42,10 @@ export class ResBandView extends ItemView {
         const GRAPH = this.app.vault.configDir + "/graph.json"
         const GRAPH_SETTINGS = await this.app.vault.adapter.read(GRAPH)
 
-        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, showAttachments?: boolean }
-        const DISTANCE = PREFERENCES["linkDistance"] ?? 30
+        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, repelStrength?: number, centerStrength?: number,  showAttachments?: boolean }
+        const DISTANCE = PREFERENCES["linkDistance"] ?? 250
+        const REPEL = PREFERENCES["repelStrength"] ?? 10
+        const CENTER = PREFERENCES["centerStrength"] ?? 0.518713248970312
         const ATTACHMENTS_VISIBLE = PREFERENCES["showAttachments"] ?? true
         
         const BAND_RULES: { folder: string, multiplier: number, rank: number}[] = [
@@ -99,8 +104,11 @@ export class ResBandView extends ItemView {
         console.debug("bands:", bandsList.length)
 
         const SIMULATION = forceSimulation(nodesList)
-        SIMULATION.force("link", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length))
+        SIMULATION.force("forceLink", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length))
+        SIMULATION.force("forceManyBody", forceManyBody().strength(REPEL * -1))
 
+        SIMULATION.force("forceX", forceX().strength(CENTER))
+        SIMULATION.force("forceY", forceY().strength(CENTER))
         SIMULATION.stop()
         SIMULATION.tick(300)
         console.debug(nodesList)
