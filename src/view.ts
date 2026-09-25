@@ -42,10 +42,14 @@ export class ResBandView extends ItemView {
         const GRAPH = this.app.vault.configDir + "/graph.json"
         const GRAPH_SETTINGS = await this.app.vault.adapter.read(GRAPH)
 
-        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, repelStrength?: number, centerStrength?: number,  showAttachments?: boolean }
+        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, repelStrength?: number, centerStrength?: number, linkStrength?: number, showAttachments?: boolean }
+
+        // graph.json stores slider positions; Obsidian's graph converts them before use (app 1.13.7)
+        const SLIDER_CURVE = (slider: number) => (Math.pow(0.01, 1 - slider) - 0.01) / (1 - 0.01)
         const DISTANCE = PREFERENCES["linkDistance"] ?? 250
-        const REPEL = PREFERENCES["repelStrength"] ?? 10
-        const CENTER = PREFERENCES["centerStrength"] ?? 0.518713248970312
+        const REPEL = Math.max(Math.pow(PREFERENCES["repelStrength"] ?? 10, 3), 1)
+        const CENTER = SLIDER_CURVE(PREFERENCES["centerStrength"] ?? 0.518713248970312)
+        const LINK = SLIDER_CURVE(PREFERENCES["linkStrength"] ?? 1)
         const ATTACHMENTS_VISIBLE = PREFERENCES["showAttachments"] ?? true
         
         const BAND_RULES: { folder: string, multiplier: number, rank: number}[] = [
@@ -104,7 +108,7 @@ export class ResBandView extends ItemView {
         console.debug("bands:", bandsList.length)
 
         const SIMULATION = forceSimulation(nodesList)
-        SIMULATION.force("forceLink", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length))
+        SIMULATION.force("forceLink", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length).strength(LINK))
         SIMULATION.force("forceManyBody", forceManyBody().strength(REPEL * -1))
 
         SIMULATION.force("forceX", forceX().strength(CENTER))
