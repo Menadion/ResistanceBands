@@ -40,12 +40,33 @@ export class ResBandView extends ItemView {
         const FILTERS = (JSON.parse(APP_SETTINGS) as { userIgnoreFilters?: string[] })["userIgnoreFilters"] ?? []
 
         const GRAPH = this.app.vault.configDir + "/graph.json"
-        const GRAPH_SETTINGS = await this.app.vault.adapter.read(GRAPH)
 
-        const PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { linkDistance?: number, repelStrength?: number, centerStrength?: number, linkStrength?: number, showAttachments?: boolean }
+        let PREFERENCES: { 
+            linkDistance?: number, 
+            repelStrength?: number, 
+            centerStrength?: number, 
+            linkStrength?: number, 
+            showAttachments?: boolean 
+        } = {}
+
+        try {
+            const GRAPH_SETTINGS = await this.app.vault.adapter.read(GRAPH)
+
+            PREFERENCES = JSON.parse(GRAPH_SETTINGS) as { 
+                linkDistance?: number, 
+                repelStrength?: number, 
+                centerStrength?: number, 
+                linkStrength?: number, 
+                showAttachments?: boolean 
+            }
+        } catch(error) {
+            console.debug("Couldn't read graph.json, using default graph settings:", error)
+        }
 
         // graph.json stores slider positions; Obsidian's graph converts them before use (app 1.13.7)
         const SLIDER_CURVE = (slider: number) => (Math.pow(0.01, 1 - slider) - 0.01) / (1 - 0.01)
+
+
         const DISTANCE = PREFERENCES["linkDistance"] ?? 250
         const REPEL = Math.max(Math.pow(PREFERENCES["repelStrength"] ?? 10, 3), 1)
         const CENTER = SLIDER_CURVE(PREFERENCES["centerStrength"] ?? 0.518713248970312)
