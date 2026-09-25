@@ -125,17 +125,38 @@ export class ResBandView extends ItemView {
             }
         }
 
+        const SIMULATION = forceSimulation(nodesList)
+
         console.debug("nodes:", nodesList.length)
         console.debug("bands:", bandsList.length)
 
-        const SIMULATION = forceSimulation(nodesList)
         SIMULATION.force("forceLink", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length).strength(LINK))
         SIMULATION.force("forceManyBody", forceManyBody().strength(REPEL * -1))
-
         SIMULATION.force("forceX", forceX().strength(CENTER))
         SIMULATION.force("forceY", forceY().strength(CENTER))
         SIMULATION.stop()
         SIMULATION.tick(300)
+    
+        const SHEET = this.contentEl.createSvg("svg", { attr: { width: 1000, height: 1000, viewBox: "-2500 -2500 5000 5000" }})
+
+        for (const band of bandsList) {
+            SHEET.createSvg("line", { attr: {
+                x1: (band.source as RbNode).x ?? 0,
+                y1: (band.source as RbNode).y ?? 0, 
+                x2: (band.target as RbNode).x ?? 0, 
+                y2: (band.target as RbNode).y ?? 0, 
+                stroke: "grey" }})
+        }
+
+        for (const node of nodesList) {
+            SHEET.createSvg("circle", { attr: { 
+                cx: node.x ?? 0,
+                cy: node.y ?? 0,
+                r: 5,
+                fill: "grey" 
+            }})
+        }
+
         console.debug(bandsList[0])
         console.debug(nodesList)
     }
