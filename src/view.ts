@@ -17,8 +17,8 @@ interface RbNode extends SimulationNodeDatum {
 }
 
 interface RbBand extends SimulationLinkDatum<RbNode> {
-    source: string,
-    target: string,
+    source: RbNode | string,
+    target: RbNode | string,
     length: number
 }
 
@@ -136,6 +136,7 @@ export class ResBandView extends ItemView {
         SIMULATION.force("forceY", forceY().strength(CENTER))
         SIMULATION.stop()
         SIMULATION.tick(300)
+        console.debug(bandsList[0])
         console.debug(nodesList)
     }
 }
