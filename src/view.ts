@@ -162,15 +162,22 @@ export class ResBandView extends ItemView {
             }})
         }
 
-        const ZOOM_MULTIPLIER = 1.2
-        
+        // Obsidian's graph view: x1.5 for every 120 of deltaY
+        const ZOOM_MULTIPLIER = 1.5
+
         this.registerDomEvent(this.contentEl, "wheel", (event) => {
             event.preventDefault()
 
-            if (event.deltaY > 0) {
-                windowSize = windowSize * ZOOM_MULTIPLIER
-            } else if (event.deltaY < 0) {
-                windowSize = windowSize / ZOOM_MULTIPLIER
+            const sheetSize = Math.min(SHEET.clientWidth, SHEET.clientHeight)
+            const minWindowSize = sheetSize / 8
+            const maxWindowSize = sheetSize * 128
+
+            windowSize = windowSize * ZOOM_MULTIPLIER ** (event.deltaY / 120)
+
+            if (windowSize < minWindowSize) {
+                windowSize = minWindowSize
+            } else if (windowSize > maxWindowSize) {
+                windowSize = maxWindowSize
             }
 
             SHEET.setAttr("viewBox", `${minX} ${minY} ${windowSize} ${windowSize}`)
