@@ -168,9 +168,17 @@ export class ResBandView extends ItemView {
         this.registerDomEvent(this.contentEl, "wheel", (event) => {
             event.preventDefault()
 
+            const MATRIX = SHEET.getScreenCTM()
+
+            if (!MATRIX) { return }
+
+            const ANCHOR = new DOMPoint(event.clientX, event.clientY).matrixTransform(MATRIX.inverse())
+
             const sheetSize = Math.min(SHEET.clientWidth, SHEET.clientHeight)
             const minWindowSize = sheetSize / 8
             const maxWindowSize = sheetSize * 128
+
+            const fixedSize = windowSize
 
             windowSize = windowSize * ZOOM_MULTIPLIER ** (event.deltaY / 120)
 
@@ -179,6 +187,13 @@ export class ResBandView extends ItemView {
             } else if (windowSize > maxWindowSize) {
                 windowSize = maxWindowSize
             }
+
+            const shrinkSize = windowSize / fixedSize
+            const anchorGapX = ANCHOR.x - minX
+            minX = ANCHOR.x - anchorGapX * shrinkSize
+
+            const anchorGapY = ANCHOR.y - minY
+            minY = ANCHOR.y - anchorGapY * shrinkSize
 
             SHEET.setAttr("viewBox", `${minX} ${minY} ${windowSize} ${windowSize}`)
         })
