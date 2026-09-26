@@ -132,8 +132,17 @@ export class ResBandView extends ItemView {
         SIMULATION.force("forceY", forceY().strength(CENTER))
         SIMULATION.stop()
         SIMULATION.tick(300)
-    
-        const SHEET = this.contentEl.createSvg("svg", { attr: { width: 1000, height: 1000, viewBox: "-2500 -2500 5000 5000" }})
+        
+        // Viewbox values
+        let minX = -2500
+        let minY = -2500
+        let windowSize = 5000
+
+        const SHEET = this.contentEl.createSvg("svg", { attr: { 
+            width: "100%", 
+            height: "100%", 
+            viewBox: `${minX} ${minY} ${windowSize} ${windowSize}`
+        }})
 
         for (const band of bandsList) {
             SHEET.createSvg("line", { attr: {
@@ -152,5 +161,20 @@ export class ResBandView extends ItemView {
                 fill: "grey" 
             }})
         }
+
+        const ZOOM_MULTIPLIER = 1.2
+        
+        this.registerDomEvent(this.contentEl, "wheel", (event) => {
+            event.preventDefault()
+
+            if (event.deltaY > 0) {
+                windowSize = windowSize * ZOOM_MULTIPLIER
+            } else if (event.deltaY < 0) {
+                windowSize = windowSize / ZOOM_MULTIPLIER
+            }
+
+            SHEET.setAttr("viewBox", `${minX} ${minY} ${windowSize} ${windowSize}`)
+        })
+
     }
 }
