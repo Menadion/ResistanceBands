@@ -32,7 +32,6 @@ export class ResBandView extends ItemView {
 
     async onOpen() {
         this.contentEl.empty()
-        this.contentEl.createEl("h4", {text: "placeholder"})
         
         const LINKS = this.app.metadataCache.resolvedLinks
         const APP = this.app.vault.configDir + "/app.json"
@@ -124,11 +123,8 @@ export class ResBandView extends ItemView {
                 bandsList.push({ source: path, target: band, length: (DISTANCE * bandMultiplier) })
             }
         }
-
+        
         const SIMULATION = forceSimulation(nodesList)
-
-        console.debug("nodes:", nodesList.length)
-        console.debug("bands:", bandsList.length)
 
         SIMULATION.force("forceLink", forceLink<RbNode, RbBand>(bandsList).id(node => node.path).distance(band => band.length).strength(LINK))
         SIMULATION.force("forceManyBody", forceManyBody().strength(REPEL * -1))
@@ -156,8 +152,5 @@ export class ResBandView extends ItemView {
                 fill: "grey" 
             }})
         }
-
-        console.debug(bandsList[0])
-        console.debug(nodesList)
     }
 }
