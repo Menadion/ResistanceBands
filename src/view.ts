@@ -154,12 +154,21 @@ export class ResBandView extends ItemView {
         }
 
         for (const node of nodesList) {
+            const NODE_LABEL = this.app.vault.getFileByPath(node.path)
+
             SHEET.createSvg("circle", { attr: { 
                 cx: node.x ?? 0,
                 cy: node.y ?? 0,
                 r: 5,
                 fill: "grey" 
             }})
+
+            SHEET.createSvg("text", { attr: { 
+                x: node.x ?? 0,
+                y: (node.y ?? 0)  + 20,
+                "text-anchor": "middle",
+                fill: "white"
+            }}).setText(NODE_LABEL?.basename ?? node.path)
         }
 
         // Obsidian's graph view: x1.5 for every 120 of deltaY
