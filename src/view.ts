@@ -205,6 +205,14 @@ export class ResBandView extends ItemView {
                 windowSize = maxWindowSize
             }
 
+            for (const label of LABELS) {
+                if (windowSize <= minWindowSize * 8) {
+                    label.setAttr("visibility", `visible`)
+                } else if (windowSize > minWindowSize * 8) {
+                    label.setAttr("visibility", `hidden`)
+                }
+            }
+
             const shrinkSize = windowSize / fixedSize
             const anchorGapX = ANCHOR.x - minX
             minX = ANCHOR.x - anchorGapX * shrinkSize
