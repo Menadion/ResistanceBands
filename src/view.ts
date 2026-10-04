@@ -144,6 +144,7 @@ export class ResBandView extends ItemView {
             viewBox: `${minX} ${minY} ${windowSize} ${windowSize}`
         }})
 
+
         for (const band of bandsList) {
             SHEET.createSvg("line", { attr: {
                 x1: (band.source as RbNode).x ?? 0,
@@ -152,6 +153,9 @@ export class ResBandView extends ItemView {
                 y2: (band.target as RbNode).y ?? 0, 
                 stroke: "grey" }})
         }
+
+        const LABELS: SVGTextElement[] = []
+        
 
         for (const node of nodesList) {
             const NODE_LABEL = this.app.vault.getFileByPath(node.path)
@@ -163,13 +167,16 @@ export class ResBandView extends ItemView {
                 fill: "grey" 
             }})
 
-            SHEET.createSvg("text", { attr: { 
+            const LABEL = SHEET.createSvg("text", { attr: { 
                 x: node.x ?? 0,
                 y: (node.y ?? 0)  + 20,
                 "text-anchor": "middle",
                 "visibility": "hidden",
                 fill: "white"
-            }}).setText(NODE_LABEL?.basename ?? node.path)
+            }})
+
+            LABEL.setText(NODE_LABEL?.basename ?? node.path)
+            LABELS.push(LABEL)
         }
 
         // Obsidian's graph view: x1.5 for every 120 of deltaY
