@@ -192,7 +192,7 @@ export class ResBandView extends ItemView {
             const ANCHOR = new DOMPoint(event.clientX, event.clientY).matrixTransform(MATRIX.inverse())
 
             const sheetSize = Math.min(SHEET.clientWidth, SHEET.clientHeight)
-            const minWindowSize = sheetSize / 8
+            const minWindowSize = (sheetSize / 4)
             const maxWindowSize = sheetSize * 128
 
             const fixedSize = windowSize
