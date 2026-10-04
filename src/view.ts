@@ -167,6 +167,7 @@ export class ResBandView extends ItemView {
                 x: node.x ?? 0,
                 y: (node.y ?? 0)  + 20,
                 "text-anchor": "middle",
+                "visibility": "hidden",
                 fill: "white"
             }}).setText(NODE_LABEL?.basename ?? node.path)
         }
