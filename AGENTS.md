@@ -6,6 +6,67 @@
 - Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian.
 - Required release artifacts: `main.js`, `manifest.json`, and optional `styles.css`.
 
+## What this plugin does
+
+Resistance Bands gives chosen notes their own graph link length, longer or shorter than the rest.
+Obsidian's core graph cannot express that: a link reaches its simulation as `[sourcePath,
+targetPath]` with no room for a per-link value, and `linkDistance` is a single scalar applied to
+every link. So the plugin supplies the simulation and leaves the drawing to Obsidian.
+
+## Graph view internals (undocumented API)
+
+Verified against Obsidian on 2026-10-05 by reading `resources/obsidian.asar` and probing a live
+renderer. **None of this is public API.** Plugin review flags internal API use, and any Obsidian
+update can change it without deprecation. Re-verify before trusting it.
+
+The renderer is at `app.workspace.getLeavesOfType("graph")[0].view.renderer` (`"localgraph"` for
+local graphs). It owns `nodes`, `links`, `nodeLookup`, `workerResults`, `scale`, `worker`, and a
+PIXI app at `px`. Its layout runs in a **per-view** worker built from `/sim.js`; the constructor
+takes an optional existing worker, so views do not share one. `destroy()` calls
+`worker.terminate()`.
+
+Messages the renderer sends the worker:
+
+```
+{ forces: { centerStrength | linkStrength | linkDistance | repelStrength }, alpha?, alphaTarget?, run? }
+{ nodes: { [path]: [x, y] | false }, links: [[sourcePath, targetPath], ...], alpha?, run? }
+{ forceNode: { id, x, y }, alpha?, alphaTarget?, run? }
+```
+
+- `forces` arrives **one key per message**, and before any node data. Each field is a partial
+  update; absent fields keep their previous value.
+- `repelStrength` is sent **positive** and negated on arrival.
+- `linkDistance` is sent **already converted** from the slider position, so `graph.json` does not
+  need reading.
+- In `nodes`, a falsy value (observed as `false`) means **keep this node's current position**. Only
+  a truthy `[x, y]` sets one. Reading `false[0]` is where a `NaN` cascade comes from.
+- Node ids are vault-relative paths with the extension, the same key space as
+  `metadataCache.resolvedLinks`, so folder-prefix rules match them untranslated.
+- The renderer posts a wide node set first and a narrower one after (385 then 354 on this vault).
+
+What the worker sends back, consumed in the renderer's render callback:
+
+```
+{ id: string[], buffer, v?, ignore? }   // buffer holds interleaved x, y floats
+```
+
+A `SharedArrayBuffer` takes a version-word path (last 4 bytes, a `Uint32`). A plain `ArrayBuffer`
+takes a simpler branch: applied once, then `workerResults` is cleared. Obsidian uses the former;
+the latter needs no version counter and is the easier one to produce.
+
+Defaults read from the bundle: `linkDistance 250`, `repelStrength -1000`, `centerStrength 0.1`,
+`linkStrength 1`, `alphaDecay 1 - 0.001 ** (1/300)`. Label opacity is
+`clamp(log2(scale) + 1 - textFadeMultiplier, 0, 1)`, a ramp spanning one doubling of scale.
+
+The renderer auto-fits its zoom to the layout's extent, so scaling every band by the same factor
+is only a zoom. Untangling has to come from the *relative* difference between band lengths.
+
+**Open design questions — M's to decide, do not settle them in code unasked:** which node-set pass
+the band rules run against and what happens to a band whose endpoint is in one pass but not the
+other; what state the replacement sim holds and what it does if told to `run` before it has links;
+what the replacement is such that `terminate()` does not throw; and the shape of the length lever
+itself.
+
 ## Environment & tooling
 
 - Node.js: use current LTS (Node 18+ recommended).
