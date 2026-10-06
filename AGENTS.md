@@ -61,11 +61,40 @@ Defaults read from the bundle: `linkDistance 250`, `repelStrength -1000`, `cente
 The renderer auto-fits its zoom to the layout's extent, so scaling every band by the same factor
 is only a zoom. Untangling has to come from the *relative* difference between band lengths.
 
+## Decided (2026-10-06)
+
+**The plugin owns no view of its own.** It hooks the core Graph view's leaf and swaps
+`renderer.worker` for its own object. Rejected: a tab of its own constructing a renderer, which
+re-opens exactly what renting the renderer was meant to close. Consequence: the plugin is mutating a
+view it does not own, so `onunload` must restore the original worker, and graph leaves opened later
+need hooking too.
+
+**The replacement is a forwarding layer, not a stand-in.** The renderer never asks what sits in
+`renderer.worker`; it only calls things on it, so any object answering `postMessage`, `onmessage` and
+`terminate` is accepted. The real worker is parked in a field on the plugin and never terminated by
+the plugin directly. Instead the replacement's `terminate` forwards to it:
+
+```js
+terminate() { this.parked.terminate() }
+```
+
+Obsidian's `destroy()` calls the replacement's `terminate`, which calls the real one, so closing the
+graph tab kills the real thread with no orphan left behind. This is also how plugin code gets to run
+at tab-close time, which retires the alternatives: the `layout-change` workspace event with its
+leaf-diffing and state tracking, and monkey-patching `renderer.destroy`, the route plugin review
+would flag hardest.
+
+**The two teardown events get different treatment.** `onunload` (plugin disabled, graph still open)
+**restores** — the parked worker goes back in the slot and the graph returns to stock behavior.
+`destroy()` (tab closed, plugin still enabled) **terminates**, via the forwarding above. Never
+terminate on unload: a renderer with a dead worker is frozen, not visibly broken, which is worse —
+it applies whatever arrives on `onmessage`, so when nothing arrives the graph looks fine and does not
+respond.
+
 **Open design questions — M's to decide, do not settle them in code unasked:** which node-set pass
 the band rules run against and what happens to a band whose endpoint is in one pass but not the
 other; what state the replacement sim holds and what it does if told to `run` before it has links;
-what the replacement is such that `terminate()` does not throw; and the shape of the length lever
-itself.
+and the shape of the length lever itself.
 
 ## Environment & tooling
 
