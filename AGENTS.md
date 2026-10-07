@@ -40,9 +40,15 @@ Messages the renderer sends the worker:
   need reading.
 - In `nodes`, a falsy value (observed as `false`) means **keep this node's current position**. Only
   a truthy `[x, y]` sets one. Reading `false[0]` is where a `NaN` cascade comes from.
-- Node ids are vault-relative paths with the extension, the same key space as
-  `metadataCache.resolvedLinks`, so folder-prefix rules match them untranslated.
-- The renderer posts a wide node set first and a narrower one after (385 then 354 on this vault).
+- Node ids are vault-relative paths with the extension for **files that exist**, the same key space
+  as `metadataCache.resolvedLinks`, so folder-prefix rules match them untranslated. **An unresolved
+  link is a node too, and its id is the raw link text** — no folder, no extension
+  (`engine-rules`, `The World Wraps`, `../backend/`). No folder prefix can ever match one.
+- The renderer posts a wide node set first and a narrower one after (386 then 355 on this vault).
+  **Measured 2026-10-07: the second is the first after `hideUnresolved` is applied.** With the
+  filter off both messages carry 386 keys and nothing drops; with it on, the second drops exactly
+  the unresolved names and adds nothing, so it is always a subset. The set therefore moves when the
+  **user** flips Graph view's "Existing files only", which they can do while the plugin is running.
 
 What the worker sends back, consumed in the renderer's render callback:
 
@@ -91,10 +97,28 @@ terminate on unload: a renderer with a dead worker is frozen, not visibly broken
 it applies whatever arrives on `onmessage`, so when nothing arrives the graph looks fine and does not
 respond.
 
-**Open design questions — M's to decide, do not settle them in code unasked:** which node-set pass
-the band rules run against and what happens to a band whose endpoint is in one pass but not the
-other; what state the replacement sim holds and what it does if told to `run` before it has links;
-and the shape of the length lever itself.
+**The sim holds its inputs and acts on none of them early.** `forces` arrives one key per message,
+before any node data, and may carry `run: true` when no simulation exists yet. So the four force
+values are held as mutable standing state that later partial updates overwrite, and `run` is stored
+as an intention rather than obeyed on arrival. A gate starts the ticking once nodes and links have
+arrived and the simulation has been created — never before, or `forceLink` initializes against an
+empty nodes list.
+
+**Always rebuild from the most recent `nodes` message, and re-filter the bands against it.** Not
+"the second message": nothing guarantees there are only two, and a user toggling a filter mid-session
+sends more. Any band whose endpoint is absent from that node map is dropped before `forceLink` sees
+it, because `find()` in `d3-force/src/link.js:8-11` throws `node not found` from inside initialize,
+which takes the whole simulation down rather than skipping one band. Rejected: building from the
+unfiltered first message, which simulates nodes the user has hidden so they repel the visible ones
+out of position, and which needs new code for every filter Obsidian adds; and inventing placeholder
+nodes for missing ends, which is the same layout problem by hand.
+
+Band-rule coverage is never at risk from unresolved endpoints: every band was written by a note, so
+every band has at least one end that is a real file in a real folder, and the either-end rule finds
+it there.
+
+**Open design questions — M's to decide, do not settle them in code unasked:** the shape of the
+length lever itself.
 
 ## Environment & tooling
 
