@@ -67,7 +67,7 @@ Defaults read from the bundle: `linkDistance 250`, `repelStrength -1000`, `cente
 The renderer auto-fits its zoom to the layout's extent, so scaling every band by the same factor
 is only a zoom. Untangling has to come from the *relative* difference between band lengths.
 
-## Decided (2026-10-06)
+## Decided (2026-10-07)
 
 **The plugin owns no view of its own.** It hooks the core Graph view's leaf and swaps
 `renderer.worker` for its own object. Rejected: a tab of its own constructing a renderer, which
@@ -117,8 +117,18 @@ Band-rule coverage is never at risk from unresolved endpoints: every band was wr
 every band has at least one end that is a real file in a real folder, and the either-end rule finds
 it there.
 
-**Open design questions — M's to decide, do not settle them in code unasked:** the shape of the
-length lever itself.
+**The length lever is a per-folder multiplier, and it is already built.** One rule stores `folder`,
+`multiplier` and `rank`. A band takes the multiplier of whichever end's rule holds the lower rank;
+equal ranks average the two; a band no rule matches stays at `1`. Its length is the base
+`linkDistance` times that multiplier, so a rule **multiplies** rather than adds — a fixed amount
+subtracted can cross zero, and row 1 being `× 1` leaves the table picking only a multiplier. Live
+at `src/view.ts:82-137`. The shape survives the route change untouched: only picked bands move, and
+the relative difference between band lengths is what untangles. Rejected: adding or subtracting a
+fixed length; and ranking notes automatically by link count, which selects famous notes and sweeps
+the hubs in — the user ranks their own picks instead.
+
+**No design question is open.** What is parked is the user's entry point for those rules, the
+settings page — that is the UI, not the quantity.
 
 ## Environment & tooling
 
