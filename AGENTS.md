@@ -239,6 +239,9 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 **Do**
 
+- **Dictate code; do not write it.** M types every line in this project. Give the exact text, the
+  file and where in it, then stop and let him enter it. Compiler, linter and git stay the agent's.
+
 - Add commands with stable IDs (don't rename once released).
 - Provide defaults and validation in settings.
 - Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
